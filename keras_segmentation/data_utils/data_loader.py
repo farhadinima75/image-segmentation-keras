@@ -33,8 +33,8 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False):
         the segmentation images from the segs_path directory
         while checking integrity of data """
 
-    ACCEPTABLE_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", ".bmp"]
-    ACCEPTABLE_SEGMENTATION_FORMATS = [".png", ".bmp"]
+    ACCEPTABLE_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", ".bmp", ".npy"]
+    ACCEPTABLE_SEGMENTATION_FORMATS = [".png", ".bmp", ".npy"]
 
     image_files = []
     segmentation_files = {}
@@ -89,7 +89,7 @@ def get_image_array(image_input,
         if not os.path.isfile(image_input):
             raise DataLoaderError("get_image_array: path {0} doesn't exist"
                                   .format(image_input))
-        img = cv2.imread(image_input, 1)
+        img = np.load(image_input)
     else:
         raise DataLoaderError("get_image_array: Can't process input type {0}"
                               .format(str(type(image_input))))
@@ -126,7 +126,7 @@ def get_segmentation_array(image_input, nClasses,
         if not os.path.isfile(image_input):
             raise DataLoaderError("get_segmentation_array: "
                                   "path {0} doesn't exist".format(image_input))
-        img = cv2.imread(image_input, 1)
+        img = np.load(image_input)
     else:
         raise DataLoaderError("get_segmentation_array: "
                               "Can't process input type {0}"
@@ -156,8 +156,8 @@ def verify_segmentation_dataset(images_path, segs_path,
 
         return_value = True
         for im_fn, seg_fn in tqdm(img_seg_pairs):
-            img = cv2.imread(im_fn)
-            seg = cv2.imread(seg_fn)
+            img = np.load(im_fn)
+            seg = np.load(seg_fn)
             # Check dimensions match
             if not img.shape == seg.shape:
                 return_value = False
@@ -202,8 +202,8 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
         for _ in range(batch_size):
             im, seg = next(zipped)
 
-            im = cv2.imread(im, 1)
-            seg = cv2.imread(seg, 1)
+            im = np.load(im)
+            seg = np.load(seg)
 
             if do_augment:
                 im, seg[:, :, 0] = augment_seg(im, seg[:, :, 0],
