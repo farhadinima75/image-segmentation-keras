@@ -120,8 +120,8 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
 
 
 def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
-                         pretrained='imagenet',
-                         include_top=True, weights='imagenet',
+                         pretrained='None',
+                         include_top=True, weights='None',
                          input_tensor=None, input_shape=None,
                          pooling=None,
                          classes=1000):
