@@ -4,6 +4,7 @@ import random
 import six
 import numpy as np
 import cv2
+from matplotlib import pyplot as plt
 
 try:
     from tqdm import tqdm
@@ -89,7 +90,7 @@ def get_image_array(image_input,
         if not os.path.isfile(image_input):
             raise DataLoaderError("get_image_array: path {0} doesn't exist"
                                   .format(image_input))
-        img = np.load(image_input)
+        img = plt.imread(image_input)
     else:
         raise DataLoaderError("get_image_array: Can't process input type {0}"
                               .format(str(type(image_input))))
@@ -126,7 +127,7 @@ def get_segmentation_array(image_input, nClasses,
         if not os.path.isfile(image_input):
             raise DataLoaderError("get_segmentation_array: "
                                   "path {0} doesn't exist".format(image_input))
-        img = np.load(image_input)
+        img = plt.imread(image_input)
     else:
         raise DataLoaderError("get_segmentation_array: "
                               "Can't process input type {0}"
@@ -156,8 +157,8 @@ def verify_segmentation_dataset(images_path, segs_path,
 
         return_value = True
         for im_fn, seg_fn in tqdm(img_seg_pairs):
-            img = np.load(im_fn)
-            seg = np.load(seg_fn)
+            img = plt.imread(im_fn)
+            seg = plt.imread(seg_fn)
             # Check dimensions match
             if not img.shape == seg.shape:
                 return_value = False
@@ -202,8 +203,8 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
         for _ in range(batch_size):
             im, seg = next(zipped)
 
-            im = np.load(im)
-            seg = np.load(seg)
+            im = plt.imread(im)
+            seg = plt.imread(seg)
 
             if do_augment:
                 im, seg[:, :, 0] = augment_seg(im, seg[:, :, 0],
