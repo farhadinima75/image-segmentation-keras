@@ -150,7 +150,7 @@ def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
     x2 = Activation('relu')(x2)
     x2 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
     
-    x2 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
+   # x2 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
     x2 = conv_block(x2, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
     x2 = identity_block(x2, 3, [64, 64, 256], stage=2, block='b')
     x2 = identity_block(x2, 3, [64, 64, 256], stage=2, block='c')
