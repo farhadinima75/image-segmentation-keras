@@ -66,7 +66,8 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     x3 = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
                name=conv_name_base + '2c')(x2)
     x3 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x3)
-
+    x3 = layers.add([x3, input_tensor])
+    x3 = Activation('relu')(x3)
     return x3
 
 
