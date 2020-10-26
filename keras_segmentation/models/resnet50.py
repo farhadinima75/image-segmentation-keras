@@ -67,9 +67,10 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
                name=conv_name_base + '2c')(x2)
     x3 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x3)
 
-    x3 = layers.add([x3, x1, x2, input_tensor])
-    x3 = Activation('relu')(x3)
-    return x3
+    x4 = layers.add([x3[..., :filters1], x1[..., :filters1], x2[..., :filters1], input_tensor[..., :filters1]])
+    x4 = concatenate([x4, x3, x2, x1, input_tensor], axis = -1)
+    x4 = Activation('relu')(x4)
+    return x4
 
 
 def conv_block(input_tensor, kernel_size, filters, stage, block,
@@ -118,7 +119,8 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     shortcut = BatchNormalization(
         axis=bn_axis, name=bn_name_base + '1')(shortcut)
 
-    x4 = layers.add([x3, x1, x2, shortcut])
+    x4 = layers.add([x3[..., :filters1], x1[..., :filters1], x2[..., :filters1], shortcut[..., :filters1]])
+    x4 = concatenate([x4, x3, x2, x1, input_tensor], axis = -1)
     x4 = Activation('relu')(x4)
     return x4
 
