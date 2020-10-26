@@ -164,7 +164,7 @@ def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
     f3 = x3
     
     x4 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x3)
-    x4 = conv_block(x5, 3, [256, 256, 1024], stage=4, block='a')
+    x4 = conv_block(x4, 3, [256, 256, 1024], stage=4, block='a')
     x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='b')
     x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='c')
     x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='d')
