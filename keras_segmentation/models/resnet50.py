@@ -51,23 +51,25 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING,
+    x1 = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING,
                name=conv_name_base + '2a')(input_tensor)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Activation('relu')(x)
-    x = concatenate([x, input_tensor], axis = -1)
-    x = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
-               padding='same', name=conv_name_base + '2b')(x)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Activation('relu')(x)
-    x = concatenate([x, input_tensor], axis = -1)
-    x = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
-               name=conv_name_base + '2c')(x)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    x1 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x1)
+    x1 = Activation('relu')(x1)
+    x1 = concatenate([x1, input_tensor], axis = -1)
+    
+    x2 = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
+               padding='same', name=conv_name_base + '2b')(x1)
+    x2 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x2)
+    x2 = Activation('relu')(x2)
+    x2 = concatenate([x2, x1, input_tensor], axis = -1)
+    
+    x3 = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+               name=conv_name_base + '2c')(x2)
+    x3 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x3)
 
-    x = layers.add([x, input_tensor])
-    x = Activation('relu')(x)
-    return x
+    x3 = layers.add([x3, x1, x2, input_tensor])
+    x3 = Activation('relu')(x3)
+    return x3
 
 
 def conv_block(input_tensor, kernel_size, filters, stage, block,
@@ -95,30 +97,30 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING, strides=strides,
+    x1 = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING, strides=strides,
                name=conv_name_base + '2a')(input_tensor)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Activation('relu')(x)
-    x = concatenate([x, input_tensor], axis = -1)
+    x1 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x1)
+    x1 = Activation('relu')(x1)
+    x1 = concatenate([x1, input_tensor], axis = -1)
     
-    x = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
-               padding='same', name=conv_name_base + '2b')(x)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Activation('relu')(x)
-    x = concatenate([x, input_tensor], axis = -1)
+    x2 = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
+               padding='same', name=conv_name_base + '2b')(x1)
+    x2 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x2)
+    x2 = Activation('relu')(x2)
+    x2 = concatenate([x2, x1, input_tensor], axis = -1)
     
-    x = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
-               name=conv_name_base + '2c')(x)
-    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    x3 = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+               name=conv_name_base + '2c')(x2)
+    x3 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x3)
 
     shortcut = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
                       strides=strides, name=conv_name_base + '1')(input_tensor)
     shortcut = BatchNormalization(
         axis=bn_axis, name=bn_name_base + '1')(shortcut)
 
-    x = layers.add([x, shortcut])
-    x = Activation('relu')(x)
-    return x
+    x4 = layers.add([x3, x1, x2, shortcut])
+    x4 = Activation('relu')(x4)
+    return x4
 
 
 def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
@@ -151,35 +153,51 @@ def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
     x2 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
     
    # x2 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
-    x2 = conv_block(x2, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-    x2 = identity_block(x2, 3, [64, 64, 256], stage=2, block='b')
-    x2 = identity_block(x2, 3, [64, 64, 256], stage=2, block='c')
-    f2 = one_side_pad(x2)
+    x2_1 = conv_block(x2, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x2_1 = concatenate([x2_1, x2], axis = -1)
+    x2_2 = identity_block(x2_1, 3, [64, 64, 256], stage=2, block='b')
+    x2_2 = concatenate([x2_2, x2_1, x2], axis = -1)
+    x2_3 = identity_block(x2_2, 3, [64, 64, 256], stage=2, block='c')
+    x2_3 = concatenate([x2_3, x2_2, x2_1, x2], axis = -1)
+    f2 = one_side_pad(x2_3)
     
-    x3 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x2)
-    x3 = conv_block(x3, 3, [128, 128, 512], stage=3, block='a')
-    x3 = identity_block(x3, 3, [128, 128, 512], stage=3, block='b')
-    x3 = identity_block(x3, 3, [128, 128, 512], stage=3, block='c')
-    x3 = identity_block(x3, 3, [128, 128, 512], stage=3, block='d')
-    f3 = x3
+    x3_1 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2), padding = 'same')(x2_3)
+    x3_2 = conv_block(x3_1, 3, [128, 128, 512], stage=3, block='a')
+    x3_2 = concatenate([x3_2, x3_1], axis = -1)
+    x3_3 = identity_block(x3_2, 3, [128, 128, 512], stage=3, block='b')
+    x3_3 = concatenate([x3_3, x3_2, x3_1], axis = -1)
+    x3_4 = identity_block(x3_3, 3, [128, 128, 512], stage=3, block='c')
+    x3_4 = concatenate([x3_4, x3_3, x3_2, x3_1], axis = -1)
+    x3_5 = identity_block(x3_4, 3, [128, 128, 512], stage=3, block='d')
+    x3_5 = concatenate([x3_5, x3_4, x3_3, x3_2, x3_1], axis = -1)
+    f3 = x3_5
     
-    x4 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x3)
-    x4 = conv_block(x4, 3, [256, 256, 1024], stage=4, block='a')
-    x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='b')
-    x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='c')
-    x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='d')
-    x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='e')
-    x4 = identity_block(x4, 3, [256, 256, 1024], stage=4, block='f')
-    f4 = x4
+    x4_1 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2), padding = 'same')(x3_5)
+    x4_2 = conv_block(x4_1, 3, [256, 256, 1024], stage=4, block='a')
+    x4_2 = concatenate([x4_2, x4_1], axis = -1)
+    x4_3 = identity_block(x4_2, 3, [256, 256, 1024], stage=4, block='b')
+    x4_3 = concatenate([x4_3, x4_2, x4_1], axis = -1)
+    x4_4 = identity_block(x4_3, 3, [256, 256, 1024], stage=4, block='c')
+    x4_4 = concatenate([x4_4, x4_3, x4_2, x4_1], axis = -1)
+    x4_5 = identity_block(x4_4, 3, [256, 256, 1024], stage=4, block='d')
+    x4_5 = concatenate([x4_5, x4_4, x4_3, x4_2, x4_1], axis = -1)
+    x4_6 = identity_block(x4_5, 3, [256, 256, 1024], stage=4, block='e')
+    x4_6 = concatenate([x4_6, x4_5, x4_4, x4_3, x4_2, x4_1], axis = -1)
+    x4_7 = identity_block(x4_6, 3, [256, 256, 1024], stage=4, block='f')
+    x4_7 = concatenate([x4_7, x4_6, x4_5, x4_4, x4_3, x4_2, x4_1], axis = -1)
+    f4 = x4_7
     
-    x5 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x4)
-    x5 = conv_block(x5, 3, [512, 512, 2048], stage=5, block='a')
-    x5 = identity_block(x5, 3, [512, 512, 2048], stage=5, block='b')
-    x5 = identity_block(x5, 3, [512, 512, 2048], stage=5, block='c')
-    f5 = x5
+    x5_1 = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2), padding = 'same')(x4_7)
+    x5_2 = conv_block(x5_1, 3, [512, 512, 2048], stage=5, block='a')
+    x5_2 = concatenate([x5_2, x5_1], axis = -1)
+    x5_3 = identity_block(x5_2, 3, [512, 512, 2048], stage=5, block='b')
+    x5_3 = concatenate([x5_3, x5_2, x5_1], axis = -1)
+    x5_4 = identity_block(x5_3, 3, [512, 512, 2048], stage=5, block='c')
+    x5_4 = concatenate([x5_4, x5_3, x5_2, x5_1], axis = -1)
+    f5 = x5_4
 
     x6 = AveragePooling2D(
-        (7, 7), data_format=IMAGE_ORDERING, name='avg_pool')(x5)
+        (7, 7), data_format=IMAGE_ORDERING, name='avg_pool')(x5_4)
     # f6 = x
 
     if pretrained == 'imagenet':
