@@ -111,7 +111,15 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
                name=conv_name_base + '2c')(x2)
     x3 = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x3)
 
-    return x3
+    shortcut = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+                      strides=strides, name=conv_name_base + '1')(input_tensor)
+    shortcut = BatchNormalization(
+        axis=bn_axis, name=bn_name_base + '1')(shortcut)
+
+    x = layers.add([x3, shortcut])
+    x = Activation('relu')(x)
+    return x
+   # return x3
 
 
 def get_resnet50_encoder(input_height=224,  input_width=224, channels=4,
